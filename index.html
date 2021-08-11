@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Indexed DB Test</title>
+  </head>
+  <body>
+    <div>
+      <div id="supported">Support: OK</div>
+      <div id="connection">Connection: OK</div>
+      <div id="writing">Write: OK</div>
+      <div id="reading">Read: NO</div>
+      <div id="deleting">Delete: NO</div>
+    </div>
+  </body>
+  <script src="dbManager.js"></script>
+  <script>
+    function writeValue(id, text) {
+      var el = document.getElementById(id);
+      el.innerHTML = text;
+    }
+
+    function executeInTryCatch(fn, id, message) {
+      try {
+        fn();
+      } catch (err) {
+        console.log(err);
+        writeValue(id, message);
+      }
+    }
+
+    try {
+      if (!manager) throw "Not supported";
+      executeInTryCatch(
+        () => manager.UIResources.openDatabaseConnection(),
+        "connection",
+        "Indexed DB open connection: NO"
+      );
+      executeInTryCatch(
+        () =>
+          manager.UIResources.addRecords("requirements", [
+            { _id: 1, name: "req1" },
+          ]),
+        "writing",
+        "Write: NO"
+      );
+      executeInTryCatch(
+        () =>
+          manager.UIResources.addRecords("requirements", [
+            { _id: 2, name: "req2" },
+          ]),
+        "writing",
+        "Write: NO"
+      );
+      executeInTryCatch(
+        () =>
+          manager.UIResources.getAllrecords("requirements", 1, (data) => {
+            writeValue(
+              "writing",
+              data.length === 2 ? "Write: OK" : "Write: NO"
+            );
+          }),
+        "reading",
+        "Read: NO"
+      );
+      executeInTryCatch(
+        () =>
+          manager.UIResources.getRecord("requirements", 1, (data) => {
+            writeValue("reading", data ? "Read: OK" : "Read: NO");
+          }),
+        "reading",
+        "Read: NO"
+      );
+      executeInTryCatch(
+        () => manager.UIResources.removeRecord("requirements", 1),
+        "deleting",
+        "Delete: NO"
+      );
+      executeInTryCatch(
+        () =>
+          manager.UIResources.getRecord("requirements", 1, (data) => {
+            writeValue("deleting", data ? "Delete: NO" : "Delete: OK");
+          }),
+        "deleting",
+        "Read: NO"
+      );
+      executeInTryCatch(
+        () => manager.UIResources.removeAll("requirements"),
+        "deleting",
+        "Delete: NO"
+      );
+    } catch (err) {
+      writeValue("supported", "Support: NO");
+    }
+  </script>
+</html>
